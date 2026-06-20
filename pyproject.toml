@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dashie-reddit-digest"
+name = "reddit-interest-digest"
 version = "1.0.0"
 description = "Personal, read-only Reddit relevance digest scored with the Anthropic API"
 readme = "README.md"

@@ -32,5 +32,5 @@ scoring:
 
 digest:
   max_items: 25
-  subject_prefix: "[Dashie Digest]"
+  subject_prefix: "[Reddit Interest Digest]"
   send_when_empty: false   # if false, skip the email entirely when nothing qualifies

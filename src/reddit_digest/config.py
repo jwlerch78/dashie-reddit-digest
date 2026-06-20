@@ -31,7 +31,7 @@ class ScoringConfig:
 @dataclass
 class DigestConfig:
     max_items: int = 25
-    subject_prefix: str = "[Dashie Digest]"
+    subject_prefix: str = "[Reddit Interest Digest]"
     send_when_empty: bool = False
 
 
@@ -157,7 +157,7 @@ def load_config(
     )
     digest = DigestConfig(
         max_items=int(dg.get("max_items", 25)),
-        subject_prefix=str(dg.get("subject_prefix", "[Dashie Digest]")),
+        subject_prefix=str(dg.get("subject_prefix", "[Reddit Interest Digest]")),
         send_when_empty=bool(dg.get("send_when_empty", False)),
     )
 

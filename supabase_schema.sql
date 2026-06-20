@@ -1,4 +1,4 @@
--- De-dup state for the Dashie Reddit Digest cloud job.
+-- De-dup state for the Reddit Interest Digest cloud job.
 -- Stores only Reddit post IDs (no content), so the daily run never re-surfaces
 -- a post it has already emailed. Run this once in your Supabase project.
 

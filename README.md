@@ -1,4 +1,4 @@
-# Dashie Reddit Digest
+# Reddit Interest Digest
 
 A **personal, non-commercial, read-only** tool that reads new posts from a small set of
 subreddits once per day, scores each for relevance to topics I personally follow (home
@@ -138,7 +138,7 @@ If you'd rather self-host, run once daily via cron (uses the local SQLite store)
 
 ```cron
 # daily at 7am
-0 7 * * * cd /home/pi/dashie-reddit-digest && /home/pi/dashie-reddit-digest/.venv/bin/python -m reddit_digest >> digest.log 2>&1
+0 7 * * * cd /home/pi/reddit-interest-digest && /home/pi/reddit-interest-digest/.venv/bin/python -m reddit_digest >> digest.log 2>&1
 ```
 
 Structured progress logging goes to stdout, which cron captures into `digest.log`.
