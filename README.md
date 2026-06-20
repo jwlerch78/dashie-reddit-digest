@@ -1,11 +1,12 @@
 # Dashie Reddit Digest
 
 A **personal, non-commercial, read-only** tool that reads new posts from a small set of
-subreddits once per day, scores each for relevance to a family-dashboard / smart-home-display
-product using the Anthropic API, and emails the operator a digest of the most relevant threads
-with suggested (human-reviewed) talking points.
+subreddits once per day, scores each for relevance to topics I personally follow (home
+dashboards, smart-home displays, family organizers) using the Anthropic API, and emails me a
+digest of the most relevant threads with private notes for my own reference.
 
-**It never writes to Reddit — no posting, commenting, voting, or messaging, ever.**
+**It never writes to Reddit — no posting, commenting, voting, or messaging, ever.** It does not
+generate content to post anywhere and produces no promotional or marketing text.
 
 ---
 
@@ -22,8 +23,9 @@ Data API terms for personal, non-commercial use:
   retained, and deletions on Reddit are honored (a deleted post simply never reappears).
 - **Unique, descriptive User-Agent** per Reddit's Data API terms (see `.env.example`).
 
-The LLM only **scores** relevance and **drafts** suggestions for the operator to review. Nothing
-the model produces is ever posted anywhere automatically.
+The LLM only **scores** relevance and writes **private notes** for the operator to read. It does
+not draft replies or any content to be posted, and produces no promotional or marketing text.
+Nothing it produces is ever posted anywhere.
 
 ---
 
@@ -38,7 +40,8 @@ fetch (last ~24h) → keyword prefilter → de-dup → LLM relevance score → r
 3. SQLite de-dup ensures a post is never surfaced twice.
 4. Surviving posts are scored 0–10 by the Anthropic API, which returns structured JSON.
 5. Posts at or above the relevance threshold are rendered into a plain-text + HTML digest, each
-   with a relevance score, spam-risk flag, a one-line "why", and a **DRAFT** reply to review.
+   with a relevance score, spam-risk flag, a one-line "why", and optional **private notes** for
+   my own reference (never a reply to post).
 6. The digest is emailed to the operator over SMTP.
 
 ---
@@ -144,10 +147,10 @@ Structured progress logging goes to stdout, which cron captures into `digest.log
 
 ## Responsible use
 
-Every suggested reply in the digest is a **draft for the operator to read**. The operator decides
-whether to engage at all, and if so posts manually, in their own words. The tool never writes to
-Reddit. Suggested comments that read as self-promotion are flagged with an elevated `spam_risk`
-so they can be skipped.
+The digest is for my own reading. The notes are private reference material, not replies to post.
+If I ever choose to take part in a discussion, I do it manually, in my own words, as a community
+member — the tool never writes to Reddit and never generates promotional content. The `spam_risk`
+flag is there to help me avoid chiming in where a comment would come across as self-promotion.
 
 ---
 

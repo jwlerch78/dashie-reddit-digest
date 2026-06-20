@@ -38,9 +38,10 @@ def _render_text(items: list[ScoredPost]) -> str:
         if s.angle:
             lines.append(f"   why: {s.angle}")
         lines.append(f"   link: {_permalink(s)}")
-        lines.append("   --- DRAFT — review before posting ---")
-        for cline in (s.suggested_comment or "(no draft)").splitlines() or ["(no draft)"]:
-            lines.append(f"   | {cline}")
+        if s.talking_points:
+            lines.append("   notes (private — for your own reference):")
+            for cline in s.talking_points.splitlines():
+                lines.append(f"   | {cline}")
         lines.append("")
     return "\n".join(lines)
 
@@ -53,7 +54,7 @@ def _render_html(items: list[ScoredPost]) -> str:
         title = html.escape(s.post.title)
         sub = html.escape(s.post.subreddit)
         angle = html.escape(s.angle)
-        draft = html.escape(s.suggested_comment or "(no draft)")
+        notes = html.escape(s.talking_points)
         link = html.escape(_permalink(s))
         parts.append(
             "<div style='margin:0 0 18px 0;padding:0 0 12px 0;"
@@ -63,11 +64,15 @@ def _render_html(items: list[ScoredPost]) -> str:
             f"<p style='margin:0 0 4px 0;color:#555;'>relevance: "
             f"<b>{s.relevance}/10</b> &nbsp; spam_risk: <b>{html.escape(s.spam_risk)}</b></p>"
             + (f"<p style='margin:0 0 6px 0;'><i>{angle}</i></p>" if angle else "")
-            + "<p style='margin:0 0 4px 0;color:#888;font-size:12px;'>"
-            "DRAFT — review before posting</p>"
-            f"<pre style='margin:0;padding:8px;background:#f6f6f6;border-radius:4px;"
-            f"white-space:pre-wrap;font-family:inherit;'>{draft}</pre>"
-            "</div>"
+            + (
+                "<p style='margin:0 0 4px 0;color:#888;font-size:12px;'>"
+                "Notes (private — for your own reference)</p>"
+                f"<pre style='margin:0;padding:8px;background:#f6f6f6;border-radius:4px;"
+                f"white-space:pre-wrap;font-family:inherit;'>{notes}</pre>"
+                if notes
+                else ""
+            )
+            + "</div>"
         )
     return "<div style='font-family:Arial,Helvetica,sans-serif;'>" + "".join(parts) + "</div>"
 

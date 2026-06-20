@@ -49,19 +49,19 @@ def _cfg(batch_size: int = 8) -> ScoringConfig:
 def test_parses_plain_json_array():
     payload = (
         '[{"id":"a","relevance":9,"angle":"good fit","spam_risk":"low",'
-        '"suggested_comment":"Try X."}]'
+        '"talking_points":"Try X."}]'
     )
     client = FakeClient(payload)
     result = score_posts([_post("a")], _cfg(), client=client)
     assert result["a"].relevance == 9
     assert result["a"].spam_risk == "low"
-    assert result["a"].suggested_comment == "Try X."
+    assert result["a"].talking_points == "Try X."
 
 
 def test_strips_code_fences():
     payload = (
         '```json\n[{"id":"a","relevance":8,"angle":"x","spam_risk":"medium",'
-        '"suggested_comment":"y"}]\n```'
+        '"talking_points":"y"}]\n```'
     )
     client = FakeClient(payload)
     result = score_posts([_post("a")], _cfg(), client=client)
@@ -76,14 +76,14 @@ def test_bad_json_is_skipped_not_raised():
 
 
 def test_clamps_out_of_range_relevance():
-    payload = '[{"id":"a","relevance":99,"angle":"","spam_risk":"low","suggested_comment":""}]'
+    payload = '[{"id":"a","relevance":99,"angle":"","spam_risk":"low","talking_points":""}]'
     client = FakeClient(payload)
     result = score_posts([_post("a")], _cfg(), client=client)
     assert result["a"].relevance == 10
 
 
 def test_unknown_ids_ignored():
-    payload = '[{"id":"zzz","relevance":9,"angle":"","spam_risk":"low","suggested_comment":""}]'
+    payload = '[{"id":"zzz","relevance":9,"angle":"","spam_risk":"low","talking_points":""}]'
     client = FakeClient(payload)
     result = score_posts([_post("a")], _cfg(), client=client)
     assert result == {}

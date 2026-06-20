@@ -22,35 +22,37 @@ from .reddit_client import Post
 
 log = logging.getLogger(__name__)
 
-# Short, factual, neutral description used only to judge relevance — NOT ad copy.
-PRODUCT_CONTEXT = (
-    "Dashie is a self-hosted family dashboard / kiosk app for wall-mounted tablets and "
-    "TVs. It shows a shared family calendar, photos, weather, chores, and can embed Home "
-    "Assistant dashboards. It targets people who want an always-on wall display or a "
-    "Skylight/Hearth-style family organizer they can run on their own hardware."
+# Plain description of MY personal interests — used only to judge how relevant a post
+# is to what I want to read. Not a product, not marketing copy.
+INTERESTS = (
+    "I'm a hobbyist interested in home dashboards, family organizers, and wall-mounted "
+    "tablets or TVs used as smart-home displays and kiosks — things like Home Assistant "
+    "dashboards, shared family calendars, and photo displays. I follow a few communities "
+    "on these topics to keep up with what people are building and discussing."
 )
 
 _OUTPUT_CONTRACT = """For EACH post in the batch, return one JSON object with exactly these keys:
 - "id": the post id you were given (string)
-- "relevance": integer 0-10 — how relevant this post is to someone building or running
-  a family-dashboard / smart-home-display product (10 = perfect fit, 0 = unrelated)
-- "angle": one sentence explaining why this is or isn't relevant
-- "spam_risk": "low" | "medium" | "high" — would a reply here read as self-promotion?
-- "suggested_comment": a helpful, human-sounding draft reply that answers the person's
-  actual question FIRST. Only mention a dashboard/kiosk approach if it's directly
-  relevant and genuinely helpful. It must never read as an advertisement.
-
-Bias toward genuinely helpful answers. If a post would only let you reply by plugging a
-product, mark spam_risk "high" so the operator can skip it.
+- "relevance": integer 0-10 — how relevant this post is to MY interests above
+  (10 = exactly the kind of discussion I want to see, 0 = unrelated)
+- "angle": one sentence on why this is or isn't relevant to my interests
+- "spam_risk": "low" | "medium" | "high" — if I chose to join the discussion, how likely
+  is it that a comment would come across as self-promotion rather than genuinely helpful?
+- "talking_points": OPTIONAL private notes for my own reference — what's being discussed
+  and, if I happen to have genuinely useful knowledge to contribute as a community member,
+  what that might be. Do NOT write a ready-to-post reply. Do NOT promote, recommend, or
+  even name any specific product, app, or brand. Do NOT write anything that reads as
+  marketing. If there's nothing genuinely useful to note, return an empty string.
 
 Return ONLY a JSON array of these objects. No prose, no explanation, no markdown code
 fences — just the raw JSON array."""
 
 SYSTEM_PROMPT = (
-    "You are a relevance-scoring assistant for a personal tool. You evaluate Reddit posts "
-    "for how relevant they are to the following product, and draft optional, human-reviewed "
-    "reply suggestions.\n\n"
-    f"PRODUCT CONTEXT:\n{PRODUCT_CONTEXT}\n\n"
+    "You are a personal research assistant for a single hobbyist. You help me keep up "
+    "with discussions in a few online communities I follow: you rate how relevant each "
+    "post is to my interests and jot down private notes for my own reading. You never "
+    "write content to be posted, and you never promote or recommend products.\n\n"
+    f"MY INTERESTS:\n{INTERESTS}\n\n"
     f"{_OUTPUT_CONTRACT}"
 )
 
@@ -65,7 +67,7 @@ class ScoredPost:
     relevance: int
     angle: str
     spam_risk: str
-    suggested_comment: str
+    talking_points: str
 
 
 def _post_payload(post: Post) -> dict:
@@ -160,7 +162,7 @@ def score_posts(
                 relevance=max(0, min(10, relevance)),
                 angle=str(item.get("angle", "")).strip(),
                 spam_risk=str(item.get("spam_risk", "")).strip().lower() or "unknown",
-                suggested_comment=str(item.get("suggested_comment", "")).strip(),
+                talking_points=str(item.get("talking_points", "")).strip(),
             )
 
     log.info("Scored %d/%d posts", len(results), len(posts))
