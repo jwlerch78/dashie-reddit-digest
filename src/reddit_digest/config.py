@@ -67,6 +67,8 @@ class Config:
     anthropic_api_key: str
     db_path: str
     smtp: SMTPConfig | None  # None when email config is absent (e.g. dry-run only)
+    supabase_url: str | None = None  # set in the cloud to use the durable Supabase backend
+    supabase_key: str | None = None  # service-role key (bypasses RLS for this backend job)
 
 
 def _require_env(name: str) -> str:
@@ -159,6 +161,11 @@ def load_config(
         send_when_empty=bool(dg.get("send_when_empty", False)),
     )
 
+    supabase_url = os.environ.get("SUPABASE_URL", "").strip() or None
+    supabase_key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or ""
+    ).strip() or None
+
     return Config(
         subreddits=[str(s) for s in subreddits],
         lookback_hours=int(data.get("lookback_hours", 24)),
@@ -171,4 +178,6 @@ def load_config(
         anthropic_api_key=_require_env("ANTHROPIC_API_KEY"),
         db_path=os.environ.get("SEEN_DB_PATH", "seen.db").strip() or "seen.db",
         smtp=_load_smtp_config(require=require_email),
+        supabase_url=supabase_url,
+        supabase_key=supabase_key,
     )

@@ -5,11 +5,25 @@ Stores only post IDs (and a first-seen timestamp). No post content is retained.
 
 from __future__ import annotations
 
+import json
+import logging
 import sqlite3
 import time
+import urllib.parse
+import urllib.request
 from collections.abc import Iterable
 
+from .config import Config
 from .reddit_client import Post
+
+log = logging.getLogger(__name__)
+
+_SEEN_TABLE = "reddit_digest_seen"
+
+
+def _chunked(items: list, size: int):
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
 
 
 class SeenStore:
@@ -64,3 +78,81 @@ class SeenStore:
 
     def __exit__(self, *exc) -> None:
         self.close()
+
+
+class SupabaseSeenStore:
+    """Durable seen-post store backed by a Supabase (PostgREST) table.
+
+    Used in the cloud, where a local SQLite file would not survive a stateless
+    run. Talks to PostgREST over plain HTTP (stdlib `urllib`) — no extra deps.
+    Requires the table created by `supabase_schema.sql` and a service-role key
+    (which bypasses RLS for this backend job).
+    """
+
+    def __init__(self, url: str, key: str, table: str = _SEEN_TABLE, timeout: int = 30):
+        self._endpoint = url.rstrip("/") + "/rest/v1/" + table
+        self._key = key
+        self._timeout = timeout
+
+    def _headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
+        headers = {
+            "apikey": self._key,
+            "Authorization": f"Bearer {self._key}",
+            "Accept": "application/json",
+        }
+        if extra:
+            headers.update(extra)
+        return headers
+
+    def filter_unseen(self, posts: Iterable[Post]) -> list[Post]:
+        posts = list(posts)
+        if not posts:
+            return []
+        seen: set[str] = set()
+        for chunk in _chunked([p.id for p in posts], 100):
+            query = urllib.parse.urlencode(
+                {"select": "post_id", "post_id": f"in.({','.join(chunk)})"}
+            )
+            req = urllib.request.Request(f"{self._endpoint}?{query}", headers=self._headers())
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                rows = json.loads(resp.read().decode("utf-8"))
+            seen.update(row["post_id"] for row in rows)
+        return [p for p in posts if p.id not in seen]
+
+    def mark_seen(self, posts: Iterable[Post]) -> None:
+        rows = [{"post_id": p.id} for p in posts]
+        if not rows:
+            return
+        headers = self._headers(
+            {
+                "Content-Type": "application/json",
+                # Insert, ignoring rows whose post_id already exists.
+                "Prefer": "return=minimal,resolution=ignore-duplicates",
+            }
+        )
+        for chunk in _chunked(rows, 500):
+            req = urllib.request.Request(
+                self._endpoint,
+                data=json.dumps(chunk).encode("utf-8"),
+                method="POST",
+                headers=headers,
+            )
+            urllib.request.urlopen(req, timeout=self._timeout).close()
+
+    def close(self) -> None:  # nothing to close; symmetry with SeenStore
+        pass
+
+    def __enter__(self) -> "SupabaseSeenStore":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
+
+def build_seen_store(config: Config) -> SeenStore | SupabaseSeenStore:
+    """Pick the durable Supabase backend when configured, else local SQLite."""
+    if config.supabase_url and config.supabase_key:
+        log.info("Using Supabase seen-store (durable, cloud)")
+        return SupabaseSeenStore(config.supabase_url, config.supabase_key)
+    log.info("Using local SQLite seen-store: %s", config.db_path)
+    return SeenStore(config.db_path)

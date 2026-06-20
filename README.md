@@ -82,9 +82,56 @@ Requires Python 3.11+.
 
 ---
 
-## Scheduling (cron)
+## Running it in the cloud (recommended) — GitHub Actions + Supabase
 
-Run once daily at 7am on a Raspberry Pi (or any Linux box):
+No server or Raspberry Pi required. A scheduled GitHub Actions workflow
+(`.github/workflows/digest.yml`) runs the job daily; the de-dup state lives in a
+Supabase table so it survives between stateless runs.
+
+**How the de-dup backend is chosen:** if both `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` are set, the durable Supabase store is used;
+otherwise it falls back to the local SQLite file. So the same code runs locally
+(SQLite) and in the cloud (Supabase) with no changes.
+
+### 1. Create the Supabase table
+
+Run [`supabase_schema.sql`](supabase_schema.sql) once in your Supabase project
+(SQL editor, or `psql`). It creates `public.reddit_digest_seen` — a single table
+that stores only post IDs.
+
+### 2. Add the GitHub Actions secrets
+
+In the repo: **Settings → Secrets and variables → Actions → New repository secret**.
+Add each of these (or use the `gh` CLI below):
+
+| Secret | Value |
+|---|---|
+| `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USERNAME`, `REDDIT_PASSWORD`, `REDDIT_USER_AGENT` | Your Reddit script-app credentials |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `DIGEST_FROM`, `DIGEST_TO` | Email settings (Gmail app password works). `SMTP_PORT` defaults to 587 if unset. |
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Project service-role key (Project Settings → API) |
+
+```bash
+# Example with the gh CLI (run from the repo root)
+gh secret set ANTHROPIC_API_KEY
+gh secret set SUPABASE_URL
+gh secret set SUPABASE_SERVICE_ROLE_KEY
+# ...repeat for each secret above
+```
+
+### 3. Test and schedule
+
+- Edit `config.example.yaml` (the cloud config source of truth) for your
+  subreddits / keywords / thresholds, and commit.
+- Trigger a manual run: **Actions → Daily Reddit Digest → Run workflow**. Check
+  the logs and your inbox.
+- After that it runs on the `cron:` schedule in the workflow (default 12:00 UTC
+  daily — edit to taste).
+
+## Scheduling on a Pi / Linux box (alternative)
+
+If you'd rather self-host, run once daily via cron (uses the local SQLite store):
 
 ```cron
 # daily at 7am

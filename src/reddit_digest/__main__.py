@@ -11,7 +11,7 @@ import logging
 import sys
 
 from .config import Config, ConfigError, load_config
-from .dedup import SeenStore
+from .dedup import build_seen_store
 from .digest import build_digest
 from .mailer import send_digest
 from .prefilter import passes_prefilter
@@ -35,7 +35,7 @@ def run(config: Config, dry_run: bool) -> int:
     prefiltered = [p for p in posts if passes_prefilter(p, config.prefilter)]
     log.info("%d/%d posts passed the prefilter", len(prefiltered), len(posts))
 
-    store = SeenStore(config.db_path)
+    store = build_seen_store(config)
     try:
         unseen = store.filter_unseen(prefiltered)
         log.info("%d posts are new (not previously surfaced)", len(unseen))
