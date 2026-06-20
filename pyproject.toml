@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dashie-reddit-digest"
+version = "1.0.0"
+description = "Personal, read-only Reddit relevance digest scored with the Anthropic API"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "John Lerch" }]
+dependencies = [
+    "praw>=7.7,<8",
+    "anthropic>=0.40",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+reddit-digest = "reddit_digest.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

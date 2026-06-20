@@ -1,0 +1,36 @@
+subreddits:
+  - homeassistant
+  - smarthome
+  - googletv
+  - familyorganization
+
+lookback_hours: 24
+listing: new          # new | hot | rising
+max_posts_per_sub: 75
+
+prefilter:
+  min_score: 0          # min upvotes to consider
+  # post passes if ANY keyword matches title/body (case-insensitive)
+  keywords:
+    - dashboard
+    - kiosk
+    - fully kiosk
+    - wall tablet
+    - wall display
+    - wall-mounted
+    - family calendar
+    - family organizer
+    - skylight
+    - tablet display
+    - photo frame
+
+scoring:
+  model: claude-haiku-4-5-20251001   # bump to claude-sonnet-4-6 for sharper scoring
+  batch_size: 8         # posts per API call
+  min_relevance: 7      # include in digest only if >= this (0-10)
+  max_tokens: 4096      # output cap per scoring call
+
+digest:
+  max_items: 25
+  subject_prefix: "[Dashie Digest]"
+  send_when_empty: false   # if false, skip the email entirely when nothing qualifies
